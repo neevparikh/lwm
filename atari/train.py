@@ -2,6 +2,7 @@ import argparse
 from tqdm import trange
 import torch
 import wandb
+import pickle
 
 from dqn.buffer import Buffer
 from common.load_cfg import load_cfg
@@ -20,7 +21,7 @@ if __name__ == "__main__":
     p = parser.parse_args()
     cfg = load_cfg(p.cfg)
     cfg.update(vars(p))
-    wandb.init(project="lwm", config=cfg)
+    run = wandb.init(project="lwm", config=cfg)
 
     num_env = cfg["agent"]["actors"]
     fstack = cfg["agent"]["frame_stack"]
@@ -84,3 +85,5 @@ if __name__ == "__main__":
         if (n_iter + 1) % cfg["train"]["checkpoint_every"] == 0:
             save()
     save()
+    with open("wandb_{}.data".format(run.name), "wb") as f:
+        pickle.dump(run.history, f)
