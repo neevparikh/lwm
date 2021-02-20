@@ -23,7 +23,11 @@ if __name__ == "__main__":
     p = parser.parse_args()
     cfg = load_cfg(p.cfg)
     cfg.update(vars(p))
+
     os.makedirs('logs/{}'.format(cfg['run_tag']), exist_ok=True)
+    with open("logs/{}/reward.csv".format(cfg['run_tag']), "w") as f:
+        f.write('frame,reward,reward_last' + '\n')
+        
     logger = get_logger()
 
     num_env = cfg["agent"]["actors"]
@@ -48,6 +52,9 @@ if __name__ == "__main__":
     log_every = cfg["train"]["log_every"]
     train_every = cfg["train"]["learner_every"]
     wmse_every = cfg["train"]["w_mse_every"]
+
+    with open("logs/{}/params.json".format(cfg['run_tag']), "w") as f:
+        json.dump(cfg, f)
 
     def save():
         torch.save(model.state_dict(), "models/dqn.pt")
@@ -87,17 +94,17 @@ if __name__ == "__main__":
             if (n_iter + 1) % log_every < wmse_every:
                 log.update(cur_log)
 
-        print(log)
         if len(log):
             cur_log = log
             cur_log.update({"frame": n_iter * num_env * 4})
             logger.info(cur_log)
-            row = ','.join([str(v) for k,v in cur_log.items()])
+            filtered = sorted([(k,v) for k,v in cur_log.items() if k 
+                in ['frame', 'reward', 'reward_last']])
+            filtered += [0] * (3 - len(filtered))
+            row = ','.join(map(str, filtered))
             with open("logs/{}/reward.csv".format(cfg['run_tag']), "w") as f:
                 f.write(row + '\n')
 
         if (n_iter + 1) % cfg["train"]["checkpoint_every"] == 0:
             save()
     save()
-    with open("logs/{}/params.json".format(cfg['run_tag']), "w") as f:
-        json.dump(cfg, f)
