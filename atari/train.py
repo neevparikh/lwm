@@ -85,8 +85,9 @@ if __name__ == "__main__":
                 log.update(cur_log)
 
         if len(log):
-            logger.info({"frame": n_iter * num_env * 4, **log})
-            row = ','.join([v for k,v in {"frame": n_iter * num_env * 4, **log}.items()])
+            cur_log = log.update({"frame": n_iter * num_env * 4})
+            logger.info(cur_log)
+            row = ','.join([v for k,v in cur_log.items()])
             with open("logs/{}/reward.csv".format(args.run_tag), "w") as f:
                 f.write(row + '\n')
 
