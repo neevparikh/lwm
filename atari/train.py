@@ -1,8 +1,8 @@
 import argparse
 from tqdm import trange
 import torch
-import wandb
-import pickle
+from multiprocessing import get_logger
+import json
 
 from dqn.buffer import Buffer
 from common.load_cfg import load_cfg
@@ -18,10 +18,11 @@ if __name__ == "__main__":
     parser.add_argument("--env", type=str, default="MontezumaRevenge")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ri_scale", type=float, default=1)
+    parser.add_argument("--run_tag", type=str, required=True)
     p = parser.parse_args()
     cfg = load_cfg(p.cfg)
     cfg.update(vars(p))
-    run = wandb.init(project="lwm", config=cfg)
+    logger = get_logger()
 
     num_env = cfg["agent"]["actors"]
     fstack = cfg["agent"]["frame_stack"]
@@ -58,14 +59,18 @@ if __name__ == "__main__":
         learner.append(step, hx, n_iter)
 
         if n_iter == start_train:
+
             for i in trange(10000):
                 cur_log = wmse.train()
+
                 if i % 100 == 0:
-                    wandb.log(cur_log)
+                    logger.info(cur_log)
+
             for i in trange(5000):
                 cur_log = pred.train()
+
                 if i % 100 == 0:
-                    wandb.log(cur_log)
+                    logger.info(cur_log)
             wmse.save()
             pred.save()
 
@@ -80,10 +85,13 @@ if __name__ == "__main__":
                 log.update(cur_log)
 
         if len(log):
-            wandb.log({"frame": n_iter * num_env * 4, **log})
+            logger.info({"frame": n_iter * num_env * 4, **log})
+            row = ','.join([v for k,v in {"frame": n_iter * num_env * 4, **log}.items()])
+            with open("logs/{}/reward.csv".format(args.run_tag), "w") as f:
+                f.write(row + '\n')
 
         if (n_iter + 1) % cfg["train"]["checkpoint_every"] == 0:
             save()
     save()
-    with open("wandb_{}.data".format(run.name), "wb") as f:
-        pickle.dump(run.history, f)
+    with open("logs/{}/params.json".format(args.run_tag), "w") as f:
+        json.dump(cfg, f)
