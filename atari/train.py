@@ -1,5 +1,6 @@
 import argparse
 from tqdm import trange
+import os
 import torch
 from multiprocessing import get_logger
 import json
@@ -22,6 +23,7 @@ if __name__ == "__main__":
     p = parser.parse_args()
     cfg = load_cfg(p.cfg)
     cfg.update(vars(p))
+    os.makedirs('logs/{}'.format(cfg['run_tag']), exist_ok=True)
     logger = get_logger()
 
     num_env = cfg["agent"]["actors"]
@@ -71,6 +73,7 @@ if __name__ == "__main__":
 
                 if i % 100 == 0:
                     logger.info(cur_log)
+
             wmse.save()
             pred.save()
 
@@ -84,15 +87,17 @@ if __name__ == "__main__":
             if (n_iter + 1) % log_every < wmse_every:
                 log.update(cur_log)
 
+        print(log)
         if len(log):
-            cur_log = log.update({"frame": n_iter * num_env * 4})
+            cur_log = log
+            cur_log.update({"frame": n_iter * num_env * 4})
             logger.info(cur_log)
-            row = ','.join([v for k,v in cur_log.items()])
-            with open("logs/{}/reward.csv".format(args.run_tag), "w") as f:
+            row = ','.join([str(v) for k,v in cur_log.items()])
+            with open("logs/{}/reward.csv".format(cfg['run_tag']), "w") as f:
                 f.write(row + '\n')
 
         if (n_iter + 1) % cfg["train"]["checkpoint_every"] == 0:
             save()
     save()
-    with open("logs/{}/params.json".format(args.run_tag), "w") as f:
+    with open("logs/{}/params.json".format(cfg['run_tag']), "w") as f:
         json.dump(cfg, f)
