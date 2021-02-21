@@ -25,7 +25,7 @@ if __name__ == "__main__":
     cfg.update(vars(p))
 
     os.makedirs('logs/{}'.format(cfg['run_tag']), exist_ok=True)
-    with open("logs/{}/reward.csv".format(cfg['run_tag']), "w") as f:
+    with open("logs/{}/reward.csv".format(cfg['run_tag']), "w+") as f:
         f.write('frame,reward,reward_last' + '\n')
         
     logger = get_logger()
@@ -103,7 +103,7 @@ if __name__ == "__main__":
             filtered = list(map(lambda t: t[1], filtered))
             filtered += [0] * (3 - len(filtered))
             row = ','.join(map(str, filtered))
-            with open("logs/{}/reward.csv".format(cfg['run_tag']), "w+") as f:
+            with open("logs/{}/reward.csv".format(cfg['run_tag']), "a+") as f:
                 f.write(row + '\n')
 
         if (n_iter + 1) % cfg["train"]["checkpoint_every"] == 0:

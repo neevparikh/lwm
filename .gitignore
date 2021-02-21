@@ -3,3 +3,7 @@
 */models/*.pt
 */monitor_output/
 */monitor_output/**
+.onager/
+logs
+atari/logs
+atari/.onager
