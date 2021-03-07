@@ -152,9 +152,9 @@ if __name__ == '__main__':
     idf = pd.DataFrame(columns=['frame', 'interpolated_reward', 'seed'])
 
     for seed, group in df.groupby('seed'):
-        interpolation = interp1d(group['frame'], group['reward'])
+        interpolation = interp1d(pd.Series(0).append(group['frame']), pd.Series(0).append(group['reward']))
         sidf = pd.DataFrame()
-        sidf['frame'] = pd.Series(range(0, int(45e6), int(5e5)))
+        sidf['frame'] = pd.Series(range(0, min(int(49e6), group['frame'].max()), int(1e5)))
         sidf['interpolated_reward'] = sidf['frame'].apply(interpolation)
         sidf['cumulative_reward'] = sidf['interpolated_reward'].cumsum()
         sidf['seed'] = seed
